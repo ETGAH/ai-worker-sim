@@ -230,3 +230,5 @@ def generate_launch_description():
     ])
 
     
+# world: default.sdf
+# world: empty_world.sdf
