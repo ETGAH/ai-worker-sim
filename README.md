@@ -85,18 +85,18 @@ find /root/workspaces/etgah_ws/install/ffw_description/share/ffw_description/urd
 Verify fix worked (should print 0):
 
 ```bash
-xacro install/ffw_description/share/ffw_description/urdf/ffw_sg2_rev1_follower/ffw_sg2_follower.urdf.xacro \
-  model:=ffw_sg2_rev1_follower use_sim:=true | grep "filename" | grep "package://" | wc -l
+xacro install/ffw_description/share/ffw_description/urdf/ffw_sh5_rev1_follower/ffw_sh5_follower.urdf.xacro \
+  model:=ffw_sh5_rev1_follower use_sim:=true | grep "filename" | grep "package://" | wc -l
 ```
 
 ---
 
 ## Step 6 - Launch the Simulation
 
-For the sg2 robot:
+For the sh5 robot:
 
 ```bash
-ros2 launch ffw_bringup ffw_sg2_follower_ai_gazebo.launch.py
+ros2 launch ffw_bringup ffw_sh5_follower_ai_gazebo.launch.py 
 ```
 
 ---

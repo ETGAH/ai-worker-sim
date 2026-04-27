@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:macro name="ffw_sg2_sensor_system" params="use_sim:=^|false use_mock_hardware:=^|false mock_sensor_commands:=^|false">
-    <ros2_control name="ffw_sg2_sensor" type="system" is_async="true">
+  <xacro:macro name="ffw_sh5_sensor_system" params="use_sim:=^|false use_mock_hardware:=^|false mock_sensor_commands:=^|false">
+    <ros2_control name="ffw_sh5_sensor" type="system" is_async="true">
       <xacro:unless value="$(arg use_sim)">
         <hardware>
           <xacro:if value="${use_mock_hardware}">
@@ -38,7 +38,8 @@
         <state_interface name="IMU GYRO Y"/>
         <state_interface name="IMU GYRO Z"/>
       </sensor>
-      
+
+
 
     </ros2_control>
   </xacro:macro>
