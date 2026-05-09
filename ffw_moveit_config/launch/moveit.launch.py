@@ -80,6 +80,7 @@ def generate_launch_description():
             {
                 'use_sim_time': use_sim,
                 'publish_robot_description_semantic': publish_robot_description_semantic,
+                'start_state_max_bounds_error': 0.1,
             },
         ],
     )
@@ -111,6 +112,6 @@ def generate_launch_description():
         declared_arguments
         + [
             move_group_node,
-            rviz_node,
+            # rviz_node,
         ]
     )

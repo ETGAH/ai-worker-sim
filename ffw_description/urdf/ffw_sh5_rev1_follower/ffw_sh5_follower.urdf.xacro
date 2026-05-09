@@ -148,8 +148,8 @@
       <geometry>
         <mesh filename="${swerve_meshes_dir}/left_wheel_steer_link.stl" scale="0.001 0.001 0.001" />
       </geometry>
-      <material name="silver">
-        <color rgba="0.75 0.75 0.75 1"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1"/>
       </material>
     </visual>
     <collision>
@@ -179,8 +179,8 @@
       <geometry>
         <mesh filename="${swerve_meshes_dir}/left_wheel_drive_link.stl" scale="0.001 0.001 0.001" />
       </geometry>
-      <material name="silver">
-        <color rgba="0.75 0.75 0.75 1"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1"/>
       </material>
     </visual>
     <!-- <collision>
@@ -217,8 +217,8 @@
       <geometry>
         <mesh filename="${swerve_meshes_dir}/right_wheel_steer_link.stl" scale="0.001 0.001 0.001" />
       </geometry>
-      <material name="silver">
-        <color rgba="0.75 0.75 0.75 1"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1"/>
       </material>
     </visual>
     <collision>
@@ -248,8 +248,8 @@
       <geometry>
         <mesh filename="${swerve_meshes_dir}/right_wheel_drive_link.stl" scale="0.001 0.001 0.001" />
       </geometry>
-      <material name="silver">
-        <color rgba="0.75 0.75 0.75 1"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1"/>
       </material>
     </visual>
     <!-- <collision>
@@ -286,8 +286,8 @@
       <geometry>
         <mesh filename="${swerve_meshes_dir}/rear_wheel_steer_link.stl" scale="0.001 0.001 0.001" />
       </geometry>
-      <material name="silver">
-        <color rgba="0.75 0.75 0.75 1"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1"/>
       </material>
     </visual>
     <collision>
@@ -317,8 +317,8 @@
       <geometry>
         <mesh filename="${swerve_meshes_dir}/rear_wheel_drive_link.stl" scale="0.001 0.001 0.001" />
       </geometry>
-      <material name="silver">
-        <color rgba="0.75 0.75 0.75 1"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1"/>
       </material>
     </visual>
     <!-- <collision>

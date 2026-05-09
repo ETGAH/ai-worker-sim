@@ -1,7 +1,7 @@
 /**:
   controller_manager:
     ros__parameters:
-      use_sim_time: False
+      use_sim_time: true
       update_rate: 100  # Hz
 
       arm_l_controller:
@@ -155,7 +155,7 @@
       # odometry
       odom_solver_method: "svd"
       odom_integration_method: "euler"
-      odom_source: "feedback"
+      odom_source: "feedback" # "command" or "feedback"
       base_frame_id: "base_link"
       odom_frame_id: "odom"
       enable_odom_tf: true
@@ -208,6 +208,7 @@
           max_acceleration       : 1.5  # rad/s^2
           has_jerk_limits        : true
           max_jerk               : 3.0  # rad/s^3
+
 
 
 /**:

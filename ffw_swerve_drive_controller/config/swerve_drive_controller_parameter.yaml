@@ -76,13 +76,13 @@ ffw_swerve_drive_controller:
 
   steering_alignment_angle_error_threshold: {
     type: double,
-    default_value: 0.10,
+    default_value: 0.30,
     description: "Steering angle error threshold in radians to consider module aligned for full wheel speed.",
   }
 
   wheel_velocity_during_alignment_factor: {
     type: double,
-    default_value: 0.10,
+    default_value: 0.40,
     description: "Factor to multiply wheel velocity by when steering is aligning (0.0 to 1.0).",
   }
 

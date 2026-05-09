@@ -21,6 +21,7 @@
   <xacro:macro name="Link" params="reference">
     <gazebo reference="${reference}">
       <kp>1000000.0</kp>
+      <!-- <gravity>false</gravity> -->
       <kd>100.0</kd>
       <mu1>30.0</mu1>
       <mu2>30.0</mu2>
@@ -173,7 +174,7 @@
     </sensor>
   </gazebo>
   <!-- RealSense D405 Left Camera (on arm_l_link7) -->
-  <!-- <gazebo reference="camera_l_link">
+  <gazebo reference="camera_l_link">
     <sensor name="camera_l_rgb" type="camera">
       <always_on>true</always_on>
       <update_rate>30.0</update_rate>
@@ -202,7 +203,7 @@
       <always_on>true</always_on>
       <update_rate>30.0</update_rate>
       <visualize>false</visualize>
-      <topic>camera_l/depth</topic>
+      <topic>camera_l</topic>
       <gz_frame_id>camera_l_link</gz_frame_id>
       <camera>
         <horizontal_fov>1.5009831</horizontal_fov>
@@ -216,10 +217,10 @@
         </clip>
       </camera>
     </sensor>
-  </gazebo> -->
+  </gazebo>
 
   <!-- RealSense D405 Right Camera (on arm_r_link7) -->
-  <!-- <gazebo reference="camera_r_link">
+  <gazebo reference="camera_r_link">
     <sensor name="camera_r_rgb" type="camera">
       <always_on>true</always_on>
       <update_rate>30.0</update_rate>
@@ -248,7 +249,7 @@
       <always_on>true</always_on>
       <update_rate>30.0</update_rate>
       <visualize>false</visualize>
-      <topic>camera_r/depth</topic>
+      <topic>camera_r</topic>
       <gz_frame_id>camera_r_link</gz_frame_id>
       <camera>
         <horizontal_fov>1.5009831</horizontal_fov>
@@ -262,10 +263,10 @@
         </clip>
       </camera>
     </sensor>
-  </gazebo> -->
+  </gazebo>
 
  <!-- ZED Mini Camera (single RGB) -->
-  <!-- <gazebo reference="zedm_camera_center">
+  <gazebo reference="zedm_camera_center">
     <sensor name="zedm" type="camera">
       <always_on>true</always_on>
       <update_rate>30.0</update_rate>
@@ -285,8 +286,34 @@
         </clip>
       </camera>
     </sensor>
-  </gazebo> -->
-
+    
+  <sensor name="zedm_rgbd" type="rgbd_camera">
+    <always_on>true</always_on>
+    <update_rate>15.0</update_rate>
+    <topic>zedm</topic>
+    <gz_frame_id>zedm_camera_center</gz_frame_id>
+    <camera>
+      <horizontal_fov>1.7453293</horizontal_fov>
+      <image>
+        <width>640</width>
+        <height>360</height>
+        <format>R8G8B8</format>
+      </image>
+      <clip><near>0.3</near><far>10.0</far></clip>
+      <depth_camera>
+        <output>depths</output>
+        <clip><near>0.3</near><far>10.0</far></clip>
+      </depth_camera>
+      <lens>
+        <intrinsics>
+          <fx>525</fx><fy>525</fy>
+          <cx>320</cx><cy>180</cy>
+        </intrinsics>
+      </lens>
+    </camera>
+  </sensor>
+  </gazebo>
+ 
   </xacro:macro>
 
 </robot>

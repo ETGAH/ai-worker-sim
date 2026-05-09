@@ -33,14 +33,15 @@ from launch.substitutions import LaunchConfiguration
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch.actions import ExecuteProcess
+from launch.actions import TimerAction, ExecuteProcess
+
 
 
 def generate_launch_description():
     declared_arguments = [
         DeclareLaunchArgument('model', default_value='ffw_sh5_rev1_follower',
                               description='Robot model name.'),
-        DeclareLaunchArgument('world', default_value='default',
+        DeclareLaunchArgument('world', default_value='library',
                               description='Gz sim World'),
     ]
 
@@ -52,26 +53,27 @@ def generate_launch_description():
 
     ffw_bringup_path = os.path.join(
         get_package_share_directory('ffw_bringup'))
+    
+    library_world_path = os.path.join(
+        get_package_share_directory('library_world'))
 
     # Set gazebo sim resource path
     gazebo_resource_path = SetEnvironmentVariable(
     name='GZ_SIM_RESOURCE_PATH',
     value=[
         os.path.join(ffw_bringup_path, 'worlds'), ':' +
+        os.path.join(library_world_path, 'world'), ':' +
+        os.path.join(library_world_path, 'models'), ':' +  
         str(Path(ffw_description_path).parent.resolve()), ':' +
         # Add realsense2_description path
         str(Path(get_package_share_directory('realsense2_description')).parent.resolve())
     ])  
-    kill_old_bridges = ExecuteProcess(
-            cmd=['bash', '-c', 'pkill -f parameter_bridge || true; sleep 1'],
-            output='screen'
-        )    
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
             get_package_share_directory('ros_gz_sim'), 'launch'), '/gz_sim.launch.py']),
         launch_arguments=[
-            ('gz_args', [world, '.sdf', ' -v 1', ' -r', ' -s'])
+            ('gz_args', [world, '.sdf', ' -v 1', ' -r'])
         ]
     )
 
@@ -104,8 +106,8 @@ def generate_launch_description():
         executable='create',
         output='screen',
         arguments=['-topic', 'robot_description',
-                   '-x', '0.0',
-                   '-y', '0.0',
+                   '-x', '7.5',
+                   '-y', '-1.25',
                    '-z', '0.2',
                    '-R', '0.0',
                    '-P', '0.0',
@@ -118,9 +120,11 @@ def generate_launch_description():
     joint_state_broadcaster_spawner = Node(
         package='controller_manager',
         executable='spawner',
-        arguments=['joint_state_broadcaster'],
+        arguments=['joint_state_broadcaster', '--switch-timeout', '30'],
         output='screen'
+        
     )
+    
 
     robot_controller_spawner = Node(
         package='controller_manager',
@@ -154,7 +158,9 @@ def generate_launch_description():
             'effort_r_controller',
             'swerve_drive_controller',
         ],
-        parameters=[robot_description],
+        parameters=[robot_description, {'use_sim_time': True}],
+        output='screen',
+
     )
 
     gz_bridge_params_path = os.path.join(
@@ -205,6 +211,19 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}],
     )
 
+    tilt_head = TimerAction(
+        period=12.0,
+        actions=[ExecuteProcess(
+            cmd=['ros2', 'action', 'send_goal',
+                '/head_controller/follow_joint_trajectory',
+                'control_msgs/action/FollowJointTrajectory',
+                '{"trajectory": {"joint_names": ["head_joint1"], '
+                '"points": [{"positions": [0.3], '
+                '"time_from_start": {"sec": 3, "nanosec": 0}}]}}'],
+            output='screen'
+        )]
+    )
+
     return LaunchDescription([
         *declared_arguments,
         RegisterEventHandler(
@@ -219,16 +238,15 @@ def generate_launch_description():
                on_exit=[robot_controller_spawner],
             )
         ),
-        kill_old_bridges,
+        # kill_old_bridges,
         bridge,
         dual_laser_merger_node,
         gazebo_resource_path,
         gazebo,
         robot_state_pub_node,
         gz_spawn_entity,
-        rviz,
+        # rviz,
+        tilt_head,
     ])
 
     
-# world: default.sdf
-# world: empty_world.sdf
