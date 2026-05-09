@@ -1,8 +1,8 @@
-# FFW Robot Stack — ai-worker-sim
+# FFW Robot Stack - ai-worker-sim
 
 ---
 
-## Step 1 — Clone the Repository
+## Step 1 - Clone the Repository
 
 ```bash
 git clone https://github.com/ETGAH/ai-worker-sim.git
@@ -11,7 +11,7 @@ cd ai-worker-sim
 
 ---
 
-## Step 2 — Install Dependencies (Binary Only)
+## Step 2 - Install Dependencies (Binary Only)
 
 ```bash
 sudo apt update
@@ -23,7 +23,7 @@ sudo apt install ros-jazzy-dual-laser-merger
 
 ---
 
-## Step 3 — Build the Workspace
+## Step 3 - Build the Workspace
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -33,7 +33,7 @@ source install/setup.bash
 
 ---
 
-## Step 4 — Fix Mesh Files for GzWeb
+## Step 4 - Fix Mesh Files for GzWeb
 
 > **Run this after every `colcon build`.**
 
@@ -41,12 +41,26 @@ source install/setup.bash
 GzWeb's websocket server reads mesh files directly from disk. When mesh files are symlinks (which colcon creates by default), GzWeb cannot read them and the robot body does not appear. This step copies the real files over the symlinks. RViz and Gazebo are not affected since they resolve `package://` URIs normally.
 
 ```bash
+cd /root/workspaces/etgah_ws
+source /opt/ros/jazzy/setup.bash
+colcon build --allow-overriding ffw_description
+source install/setup.bash
+
+# Break mesh symlinks so GzWeb can read them
 find /root/workspaces/etgah_ws/install/ffw_description/share/ffw_description/meshes \
   -type l | while read f; do
     REAL=$(readlink -f "$f")
     rm "$f"
     cp "$REAL" "$f"
 done
+
+# Verify
+echo "Symlinks remaining (should be 0):"
+find /root/workspaces/etgah_ws/install/ffw_description/share/ffw_description/meshes -type l | wc -l
+
+echo "package:// URIs intact (should be > 0):"
+xacro install/ffw_description/share/ffw_description/urdf/ffw_sh5_rev1_follower/ffw_sh5_follower.urdf.xacro \
+  model:=ffw_sh5_rev1_follower use_sim:=true 2>/dev/null | grep "filename" | grep "package://" | wc -l
 ```
 
 Verify (should print 0):
@@ -57,7 +71,7 @@ find /root/workspaces/etgah_ws/install/ffw_description/share/ffw_description/mes
 
 ---
 
-## Step 5 — Launch the Simulation
+## Step 5 - Launch the Simulation
 
 For the sh5 robot:
 
@@ -65,19 +79,9 @@ For the sh5 robot:
 ros2 launch ffw_bringup ffw_sh5_follower_ai_gazebo.launch.py
 ```
 
-For the sg2 robot:
-
-```bash
-ros2 launch ffw_bringup ffw_sg2_follower_ai_gazebo.launch.py
-```
-
-For the bg2 robot:
-
-```bash
-ros2 launch ffw_bringup ffw_bg2_follower_ai_gazebo.launch.py
-```
-
 ---
+
+
 
 ## Re-building After Changes
 

@@ -22,10 +22,13 @@ from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.actions import ExecuteProcess
 from launch.actions import IncludeLaunchDescription
 from launch.actions import RegisterEventHandler
 from launch.actions import SetEnvironmentVariable
+from launch.actions import TimerAction
 from launch.event_handlers import OnProcessExit
+from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command
 from launch.substitutions import FindExecutable
@@ -33,8 +36,6 @@ from launch.substitutions import LaunchConfiguration
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch.actions import TimerAction, ExecuteProcess
-
 
 
 def generate_launch_description():
@@ -53,30 +54,58 @@ def generate_launch_description():
 
     ffw_bringup_path = os.path.join(
         get_package_share_directory('ffw_bringup'))
-    
+
     library_world_path = os.path.join(
         get_package_share_directory('library_world'))
 
-    # Set gazebo sim resource path
-    gazebo_resource_path = SetEnvironmentVariable(
-    name='GZ_SIM_RESOURCE_PATH',
-    value=[
-        os.path.join(ffw_bringup_path, 'worlds'), ':' +
-        os.path.join(library_world_path, 'world'), ':' +
-        os.path.join(library_world_path, 'models'), ':' +  
-        str(Path(ffw_description_path).parent.resolve()), ':' +
-        # Add realsense2_description path
-        str(Path(get_package_share_directory('realsense2_description')).parent.resolve())
-    ])  
+    # ─── Kill any stale processes from previous launches ───────────────────────
+    kill_old_bridges = ExecuteProcess(
+        cmd=['bash', '-c',
+            'pkill -9 -f parameter_bridge || true; '
+            'pkill -9 -f robot_state_publisher || true; '
+            'pkill -9 -f dual_laser_merger || true; '
+            'sleep 2; '
+            'echo "KILL DONE - safe to launch"'
+        ],
+        output='screen'
+    )
 
+    # ─── Cleanup on Ctrl+C so next launch is always fresh ──────────────────────
+    cleanup_on_shutdown = RegisterEventHandler(
+        OnShutdown(on_shutdown=[
+            ExecuteProcess(
+                cmd=['bash', '-c',
+                    'pkill -9 -f parameter_bridge || true; '
+                    'pkill -9 -f robot_state_publisher || true; '
+                    'pkill -9 -f dual_laser_merger || true; '
+                    'echo "SHUTDOWN CLEANUP DONE"'
+                ],
+                output='screen'
+            )
+        ])
+    )
+
+    # ─── Environment ───────────────────────────────────────────────────────────
+    gazebo_resource_path = SetEnvironmentVariable(
+        name='GZ_SIM_RESOURCE_PATH',
+        value=[
+            os.path.join(ffw_bringup_path, 'worlds'), ':' +
+            os.path.join(library_world_path, 'world'), ':' +
+            os.path.join(library_world_path, 'models'), ':' +
+            str(Path(ffw_description_path).parent.resolve()), ':' +
+            str(Path(get_package_share_directory('realsense2_description')).parent.resolve())
+        ])
+
+    # ─── Gazebo ────────────────────────────────────────────────────────────────
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
             get_package_share_directory('ros_gz_sim'), 'launch'), '/gz_sim.launch.py']),
         launch_arguments=[
-            ('gz_args', [world, '.sdf', ' -v 1', ' -r'])
+            ('gz_args', [world, '.sdf', ' -v 1', ' -r', ' -s'])
         ]
     )
 
+    # ─── Robot description ─────────────────────────────────────────────────────
     robot_description_content = Command([
         PathJoinSubstitution([FindExecutable(name='xacro')]),
         ' ',
@@ -92,12 +121,11 @@ def generate_launch_description():
 
     robot_description = {'robot_description': robot_description_content}
 
+    # ─── Nodes ─────────────────────────────────────────────────────────────────
     robot_state_pub_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
-        parameters=[robot_description, {
-            'use_sim_time': True
-        }],
+        parameters=[robot_description, {'use_sim_time': True}],
         output='screen'
     )
 
@@ -122,9 +150,7 @@ def generate_launch_description():
         executable='spawner',
         arguments=['joint_state_broadcaster', '--switch-timeout', '30'],
         output='screen'
-        
     )
-    
 
     robot_controller_spawner = Node(
         package='controller_manager',
@@ -160,7 +186,6 @@ def generate_launch_description():
         ],
         parameters=[robot_description, {'use_sim_time': True}],
         output='screen',
-
     )
 
     gz_bridge_params_path = os.path.join(
@@ -224,29 +249,46 @@ def generate_launch_description():
         )]
     )
 
+    # ─── Controller event chain ────────────────────────────────────────────────
+    spawn_jsb_on_entity_exit = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=gz_spawn_entity,
+            on_exit=[joint_state_broadcaster_spawner],
+        )
+    )
+
+    spawn_controllers_on_jsb_exit = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[robot_controller_spawner],
+        )
+    )
+
+    # ─── Launch description ────────────────────────────────────────────────────
     return LaunchDescription([
         *declared_arguments,
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=gz_spawn_entity,
-                on_exit=[joint_state_broadcaster_spawner],
-            )
-        ),
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-               target_action=joint_state_broadcaster_spawner,
-               on_exit=[robot_controller_spawner],
-            )
-        ),
-        # kill_old_bridges,
-        bridge,
-        dual_laser_merger_node,
-        gazebo_resource_path,
-        gazebo,
-        robot_state_pub_node,
-        gz_spawn_entity,
-        # rviz,
-        tilt_head,
-    ])
 
-    
+        # Register handlers first (they only listen, don't launch anything yet)
+        cleanup_on_shutdown,
+        spawn_jsb_on_entity_exit,
+        spawn_controllers_on_jsb_exit,
+
+        # Environment must be set before gazebo starts
+        gazebo_resource_path,
+
+        # Step 1: kill stale processes
+        kill_old_bridges,
+
+        # Step 2: after kill completes, launch everything
+        TimerAction(period=4.0, actions=[
+            gazebo,
+            robot_state_pub_node,
+            bridge,
+            dual_laser_merger_node,
+            gz_spawn_entity,
+            # rviz,
+            tilt_head,
+        ]),
+    ])
+# world: library.sdf
+# world: empty_world.sdf
