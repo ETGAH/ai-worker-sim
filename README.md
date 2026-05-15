@@ -38,35 +38,47 @@ source install/setup.bash
 > **Run this after every `colcon build`.**
 
 **Why this is needed:**
-GzWeb's websocket server reads mesh files directly from disk. When mesh files are symlinks (which colcon creates by default), GzWeb cannot read them and the robot body does not appear. This step copies the real files over the symlinks. RViz and Gazebo are not affected since they resolve `package://` URIs normally.
+
+1. **Symlinks:** GzWeb's websocket server reads mesh files directly from disk. When mesh files are symlinks (which colcon creates by default), GzWeb cannot read them. This step copies the real files over the symlinks.
+
+2. **package:// URIs:** GzWeb cannot resolve `package://ffw_description/...` URIs. The URDF files in the install folder must be patched to use absolute `file://` paths.
+
+RViz and native Gazebo are not affected since they resolve `package://` URIs normally.
 
 ```bash
-cd /root/workspaces/etgah_ws
-source /opt/ros/jazzy/setup.bash
-colcon build --allow-overriding ffw_description
-source install/setup.bash
+# Run from workspace root
+cd /root/workspaces/turtlebot3_ws
 
-# Break mesh symlinks so GzWeb can read them
-find /root/workspaces/etgah_ws/install/ffw_description/share/ffw_description/meshes \
+# 1. Break mesh symlinks (copy real files over symlinks)
+find /root/workspaces/turtlebot3_ws/install/ffw_description/share/ffw_description/meshes \
   -type l | while read f; do
     REAL=$(readlink -f "$f")
     rm "$f"
     cp "$REAL" "$f"
 done
 
-# Verify
-echo "Symlinks remaining (should be 0):"
-find /root/workspaces/etgah_ws/install/ffw_description/share/ffw_description/meshes -type l | wc -l
-
-echo "package:// URIs intact (should be > 0):"
-xacro install/ffw_description/share/ffw_description/urdf/ffw_sh5_rev1_follower/ffw_sh5_follower.urdf.xacro \
-  model:=ffw_sh5_rev1_follower use_sim:=true 2>/dev/null | grep "filename" | grep "package://" | wc -l
+# 2. Convert package:// to file:// in install URDF files (GzWeb fix)
+INSTALL_MESH_DIR="/root/workspaces/turtlebot3_ws/install/ffw_description/share/ffw_description/meshes"
+find /root/workspaces/turtlebot3_ws/install/ffw_description \
+    \( -name "*.xacro" -o -name "*.urdf" \) | \
+    xargs sed -i "s|package://ffw_description/meshes|file://${INSTALL_MESH_DIR}|g"
 ```
 
-Verify (should print 0):
+### Verify Step 4 Worked
 
 ```bash
-find /root/workspaces/etgah_ws/install/ffw_description/share/ffw_description/meshes -type l | wc -l
+# Should print 0 (no symlinks remaining)
+find /root/workspaces/turtlebot3_ws/install/ffw_description/share/ffw_description/meshes -type l | wc -l
+
+# Should print file:// paths (not package://)
+xacro /root/workspaces/turtlebot3_ws/install/ffw_description/share/ffw_description/urdf/ffw_sh5_rev1_follower/ffw_sh5_follower.urdf.xacro \
+  model:=ffw_sh5_rev1_follower use_sim:=true 2>&1 | grep "mesh filename" | head -3
+```
+
+Expected output for the second command:
+
+```
+<mesh filename="file:///root/workspaces/turtlebot3_ws/install/ffw_description/share/ffw_description/meshes/common/follower/swerve/base_mobile_assy.stl" ... />
 ```
 
 ---
@@ -81,22 +93,27 @@ ros2 launch ffw_bringup ffw_sh5_follower_ai_gazebo.launch.py
 
 ---
 
-
-
 ## Re-building After Changes
 
 Run Steps 3 and 4 after every code change:
 
 ```bash
+cd /root/workspaces/turtlebot3_ws
 colcon build --allow-overriding ffw_description
 source install/setup.bash
 
-find /root/workspaces/etgah_ws/install/ffw_description/share/ffw_description/meshes \
+# Step 4: symlinks + package:// patch (run as a single block)
+find /root/workspaces/turtlebot3_ws/install/ffw_description/share/ffw_description/meshes \
   -type l | while read f; do
     REAL=$(readlink -f "$f")
     rm "$f"
     cp "$REAL" "$f"
 done
+
+INSTALL_MESH_DIR="/root/workspaces/turtlebot3_ws/install/ffw_description/share/ffw_description/meshes"
+find /root/workspaces/turtlebot3_ws/install/ffw_description \
+    \( -name "*.xacro" -o -name "*.urdf" \) | \
+    xargs sed -i "s|package://ffw_description/meshes|file://${INSTALL_MESH_DIR}|g"
 ```
 
 ---
@@ -105,16 +122,9 @@ done
 
 ### Robot appears without body in GzWeb (only camera/lidar visible)
 
-Step 4 was not run after the build. Re-run Step 4 after every `colcon build`.
+Step 4 was not run after the build, OR the `package://` to `file://` patch was missed. Re-run Step 4 in full after every `colcon build`.
 
-### Web panel shows "No launch files found"
 
-The platform web panel filters launch files by checking for a literal world filename. Each launch file already contains these comments at the bottom as a workaround:
-
-```python
-# world: default.sdf
-# world: empty_world.sdf
-```
 
 Click **Refresh Launch Files** in the web panel after building if files still do not appear.
 
