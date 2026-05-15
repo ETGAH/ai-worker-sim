@@ -277,7 +277,7 @@ def generate_launch_description():
         gazebo_resource_path,
 
         # Step 1: kill stale processes
-        kill_old_bridges,
+        # kill_old_bridges,
 
         # Step 2: after kill completes, launch everything
         TimerAction(period=4.0, actions=[
@@ -290,5 +290,3 @@ def generate_launch_description():
             tilt_head,
         ]),
     ])
-# world: library.sdf
-# world: empty_world.sdf
