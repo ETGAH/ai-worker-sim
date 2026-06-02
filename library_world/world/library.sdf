@@ -19,6 +19,10 @@
     <magnetic_field>5.5644999999999998e-06 2.2875799999999999e-05 -4.2388400000000002e-05</magnetic_field>
     <atmosphere type='adiabatic'/>
     <gui fullscreen='false'>
+     <camera name='user_camera'>
+       <pose>0.5 0.5 1.5 -0.3 0 0.785</pose>
+       <track_target>ffw_sh5_rev1_follower</track_target>
+     </camera>
       <plugin name='3D View' filename='GzScene3D'>
         <gz-gui>
           <title>3D View</title>
@@ -415,34 +419,11 @@
     <uri>model://house_wall/model.sdf</uri>
 </include>
 
-<model name="red_book">
-<static>false</static>
-  <link name="link">
-    <inertial><mass>0.2</mass>
-      <inertia><ixx>0.002</ixx><ixy>0</ixy><ixz>0</ixz>
-               <iyy>0.002</iyy><iyz>0</iyz><izz>0.001</izz></inertia>
-    </inertial>
-    <visual name="v">
-    <geometry>
-    <box>
-    <size>0.04 0.20 0.20</size>
-    </box>
-    </geometry>
-      <material>
-  <ambient>1 0 0 1</ambient>
-  <diffuse>1 0 0 1</diffuse>
-  <emissive>0.2 0 0 1</emissive>
-</material>
-</visual>
-    <collision name="c">
-    <geometry>
-    <box>
-    <size>0.04 0.20 0.20</size>
-    </box>
-    </geometry>
-    </collision>
-  </link>
-  <pose>9.0 -1.25 1.36 0 0 0</pose>
-</model>
+   <include>
+      <uri>model://etgah_logo</uri>
+      <pose>7.0 -1.25 0.06 0 0 -1.57</pose>
+      <name>logo</name>
+    </include>
+
   </world>
 </sdf>

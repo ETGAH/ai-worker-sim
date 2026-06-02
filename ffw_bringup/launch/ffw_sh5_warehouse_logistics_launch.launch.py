@@ -42,21 +42,21 @@ def generate_launch_description():
     declared_arguments = [
         DeclareLaunchArgument('model', default_value='ffw_sh5_rev1_follower',
                               description='Robot model name.'),
-        DeclareLaunchArgument('world', default_value='library',
+        DeclareLaunchArgument('worlds', default_value='warehouse_logistics',
                               description='Gz sim World'),
     ]
 
     model = LaunchConfiguration('model')
-    world = LaunchConfiguration('world')
+    world = LaunchConfiguration('worlds')
 
     ffw_description_path = os.path.join(
         get_package_share_directory('ffw_description'))
 
     ffw_bringup_path = os.path.join(
         get_package_share_directory('ffw_bringup'))
-    
+
     library_world_path = os.path.join(
-        get_package_share_directory('library_world'))
+        get_package_share_directory('warehouse_worlds'))
 
     # ─── Kill any stale processes from previous launches ───────────────────────
     kill_old_bridges = ExecuteProcess(
@@ -90,7 +90,7 @@ def generate_launch_description():
         name='GZ_SIM_RESOURCE_PATH',
         value=[
             os.path.join(ffw_bringup_path, 'worlds'), ':' +
-            os.path.join(library_world_path, 'world'), ':' +
+            os.path.join(library_world_path, 'worlds'), ':' +
             os.path.join(library_world_path, 'models'), ':' +
             str(Path(ffw_description_path).parent.resolve()), ':' +
             str(Path(get_package_share_directory('realsense2_description')).parent.resolve())
@@ -134,8 +134,8 @@ def generate_launch_description():
         executable='create',
         output='screen',
         arguments=['-topic', 'robot_description',
-                   '-x', '7.9',
-                   '-y', '-1.25',
+                   '-x', '0.0',
+                   '-y', '0.0',
                    '-z', '0.09',
                    '-R', '0.0',
                    '-P', '0.0',
